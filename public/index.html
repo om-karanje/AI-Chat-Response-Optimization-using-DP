@@ -6,15 +6,24 @@
 </head>
 <body>
 
-<h1>💬 AI Chat (DP Optimized)</h1>
+<div class="container">
+  <h1>💬 AI Chat (DP Optimized)</h1>
 
-<div id="chat"></div>
+  <div id="chat"></div>
 
-<input id="input" placeholder="Type message..." />
-<button onclick="sendMessage()">Send</button>
+  <div class="input-box">
+    <input id="input" placeholder="Ask something..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
 
-<h3>🧠 Selected Context</h3>
-<div id="selected"></div>
+  <div class="panel">
+    <h3>🧠 Selected Context (DP)</h3>
+    <div id="selected"></div>
+
+    <h3>📊 DP Explanation</h3>
+    <div id="dpExplain"></div>
+  </div>
+</div>
 
 <script src="script.js"></script>
 </body>

@@ -11,14 +11,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("../public"));
 
+console.log("OPENROUTER KEY:", process.env.OPENROUTER_API_KEY);
+
 let chatHistory = [];
 
-// Token estimator
+// ---------------- TOKEN ESTIMATION ----------------
 function estimateTokens(text) {
   return Math.ceil(text.length / 4);
 }
 
-// Importance scoring
+// ---------------- IMPORTANCE SCORING ----------------
 function calculateImportance(msg, query, index) {
   let score = 1;
 
@@ -26,11 +28,19 @@ function calculateImportance(msg, query, index) {
     score += 5;
   }
 
-  score += index * 0.5; // recency
+  score += index * 0.5; // recency boost
   return score;
 }
 
-// Run C++ program
+// ---------------- RELEVANCE FILTER ----------------
+function isRelevant(msg, query) {
+  const qWords = query.toLowerCase().split(" ");
+  const text = msg.text.toLowerCase();
+
+  return qWords.some(word => text.includes(word));
+}
+
+// ---------------- RUN C++ DP ----------------
 function runCPP(messages, maxTokens) {
   return new Promise((resolve, reject) => {
     let input = `${messages.length} ${maxTokens}\n`;
@@ -39,7 +49,7 @@ function runCPP(messages, maxTokens) {
       input += `${m.tokens} ${Math.floor(m.importance)} ${m.text}\n`;
     });
 
-    const process = exec("backend/dp.exe", (error, stdout) => {
+    const process = exec("dp.exe", (error, stdout) => {
       if (error) return reject(error);
 
       const indices = stdout.trim().split(" ").map(Number);
@@ -51,42 +61,70 @@ function runCPP(messages, maxTokens) {
   });
 }
 
+// ---------------- CHAT API ----------------
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
 
+  // Add user message
   chatHistory.push({ text: message, role: "user" });
 
   const maxTokens = 300;
 
-  const enriched = chatHistory.map((msg, i) => ({
+  // ---------------- STEP 1: FILTER RELEVANT ----------------
+  const filteredHistory = chatHistory.filter(msg =>
+    isRelevant(msg, message)
+  );
+
+  // ---------------- STEP 2: FALLBACK ----------------
+  const baseHistory =
+    filteredHistory.length > 0
+      ? filteredHistory
+      : chatHistory.slice(-2);
+
+  // ---------------- STEP 3: PREPARE FOR DP ----------------
+  const enriched = baseHistory.map((msg, i) => ({
     ...msg,
     tokens: estimateTokens(msg.text),
     importance: calculateImportance(msg, message, i)
   }));
 
   try {
+    // ---------------- STEP 4: RUN DP ----------------
     const selectedIndexes = await runCPP(enriched, maxTokens);
     const selectedMessages = selectedIndexes.map(i => enriched[i]);
 
-    // Build prompt
+    // ---------------- STEP 5: BUILD PROMPT ----------------
     const contextText =
       "You are a helpful assistant.\n\n" +
-      selectedMessages.map(m => m.text).join("\n");
+      "STRICT RULE: Answer ONLY the current question. Ignore irrelevant context.\n\n" +
+      "Previous context:\n" +
+      selectedMessages.map(m => m.text).join("\n") +
+      "\n\nCurrent question:\n" +
+      message;
 
+    // ---------------- STEP 6: CALL OPENROUTER ----------------
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`,
+      "https://openrouter.ai/api/v1/chat/completions",
       {
-        contents: [
+        model: "openrouter/auto",
+        messages: [
           {
-            parts: [{ text: contextText }]
+            role: "user",
+            content: contextText
           }
         ]
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
+        }
       }
     );
 
-    const reply =
-      response.data.candidates[0].content.parts[0].text;
+    const reply = response.data.choices[0].message.content;
 
+    // Save AI response
     chatHistory.push({ text: reply, role: "assistant" });
 
     res.json({
@@ -100,6 +138,10 @@ app.post("/chat", async (req, res) => {
   }
 });
 
+// ---------------- START SERVER ----------------
 app.listen(3000, () =>
   console.log("Server running on http://localhost:3000")
 );
+
+
+
