@@ -55,30 +55,30 @@ project/
 └── README.md
 
 ## ✨ Features: 
-💬 ChatGPT-like UI
-🧠 Dynamic Programming-based optimization
-📊 DP table visualization
-⚡ Smart context selection
-🎯 Improved response accuracy
-⌨️ Enter-to-send + typing animation
+1. ChatGPT-like UI
+2. Dynamic Programming-based optimization
+3. DP table visualization
+4. Smart context selection
+5. Improved response accuracy
+6. Enter-to-send + typing animation
 
 ## 🎯 Applications:
-AI Chatbots
-Recommendation Systems
-Context-aware Assistants
-NLP Optimization
+1. AI Chatbots
+2. Recommendation Systems
+3. Context-aware Assistants
+4. NLP Optimization
 
 ## 🧠 Key Learning:
-Application of Dynamic Programming in real-world systems
-Integration of C++ with Node.js
-Efficient context management in AI systems
+1. Application of Dynamic Programming in real-world systems
+2. Integration of C++ with Node.js
+3. Efficient context management in AI systems
 
 ## 🚀 Future Improvements:
- Highlight selected DP path in table
- Token usage visualization
- Voice input support
- Chat history persistence
- Viva Summary
+1. Highlight selected DP path in table
+2. Token usage visualization
+3. Voice input support
+4. Chat history persistence
+5. Viva Summary
 
 This project uses Dynamic Programming (0/1 Knapsack) to optimally select relevant chat context under token constraints, improving chatbot efficiency and response quality.
 
