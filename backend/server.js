@@ -15,12 +15,12 @@ console.log("OPENROUTER KEY:", process.env.OPENROUTER_API_KEY);
 
 let chatHistory = [];
 
-// ---------------- TOKEN ESTIMATION ----------------
+// ---------------- TOKEN ----------------
 function estimateTokens(text) {
   return Math.ceil(text.length / 4);
 }
 
-// ---------------- IMPORTANCE SCORING ----------------
+// ---------------- IMPORTANCE ----------------
 function calculateImportance(msg, query, index) {
   let score = 1;
 
@@ -28,15 +28,14 @@ function calculateImportance(msg, query, index) {
     score += 5;
   }
 
-  score += index * 0.5; // recency boost
+  score += index * 1.5; // recency boost
   return score;
 }
 
-// ---------------- RELEVANCE FILTER ----------------
+// ---------------- RELEVANCE ----------------
 function isRelevant(msg, query) {
   const qWords = query.toLowerCase().split(" ");
   const text = msg.text.toLowerCase();
-
   return qWords.some(word => text.includes(word));
 }
 
@@ -49,11 +48,34 @@ function runCPP(messages, maxTokens) {
       input += `${m.tokens} ${Math.floor(m.importance)} ${m.text}\n`;
     });
 
-    const process = exec("dp.exe", (error, stdout) => {
-      if (error) return reject(error);
+    // 🔥 FIXED PATH FOR WINDOWS
+    const process = exec(".\\dp.exe", (error, stdout) => {
+      if (error) {
+        console.error("DP EXEC ERROR:", error);
+        return reject(error);
+      }
 
-      const indices = stdout.trim().split(" ").map(Number);
-      resolve(indices);
+      console.log("RAW OUTPUT:\n", stdout);
+
+      const lines = stdout.trim().split("\n");
+
+      let table = [];
+      let selected = [];
+      let mode = "";
+
+      lines.forEach(line => {
+        line = line.trim();
+
+        if (line === "TABLE") mode = "table";
+        else if (line === "SELECTED") mode = "selected";
+        else if (mode === "table") {
+          table.push(line.split(/\s+/).map(Number));
+        } else if (mode === "selected") {
+          selected = line.split(/\s+/).map(Number);
+        }
+      });
+
+      resolve({ table, selected });
     });
 
     process.stdin.write(input);
@@ -61,27 +83,25 @@ function runCPP(messages, maxTokens) {
   });
 }
 
-// ---------------- CHAT API ----------------
+// ---------------- CHAT ROUTE ----------------
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
 
-  // Add user message
   chatHistory.push({ text: message, role: "user" });
 
   const maxTokens = 300;
 
-  // ---------------- STEP 1: FILTER RELEVANT ----------------
+  // 🔥 Ensure enough context
+  const recentHistory = chatHistory.slice(-5);
+
   const filteredHistory = chatHistory.filter(msg =>
     isRelevant(msg, message)
   );
 
-  // ---------------- STEP 2: FALLBACK ----------------
-  const baseHistory =
-    filteredHistory.length > 0
-      ? filteredHistory
-      : chatHistory.slice(-2);
+  const baseHistory = [...new Map(
+    [...filteredHistory, ...recentHistory].map(m => [m.text, m])
+  ).values()];
 
-  // ---------------- STEP 3: PREPARE FOR DP ----------------
   const enriched = baseHistory.map((msg, i) => ({
     ...msg,
     tokens: estimateTokens(msg.text),
@@ -89,29 +109,34 @@ app.post("/chat", async (req, res) => {
   }));
 
   try {
-    // ---------------- STEP 4: RUN DP ----------------
-    const selectedIndexes = await runCPP(enriched, maxTokens);
-    const selectedMessages = selectedIndexes.map(i => enriched[i]);
+    const result = await runCPP(enriched, maxTokens);
 
-    // ---------------- STEP 5: BUILD PROMPT ----------------
+    console.log("DP RESULT:", result);
+
+    const selectedMessages = result.selected.map(i => enriched[i]);
+
+    // 🔥 fallback safety
+    const finalSelected =
+      selectedMessages.length > 0
+        ? selectedMessages
+        : baseHistory.slice(-2);
+
+    // ---------------- PROMPT ----------------
     const contextText =
       "You are a helpful assistant.\n\n" +
-      "STRICT RULE: Answer ONLY the current question. Ignore irrelevant context.\n\n" +
-      "Previous context:\n" +
-      selectedMessages.map(m => m.text).join("\n") +
+      "Answer the CURRENT question using previous context if needed.\n\n" +
+      "Conversation:\n" +
+      finalSelected.map(m => m.text).join("\n") +
       "\n\nCurrent question:\n" +
       message;
 
-    // ---------------- STEP 6: CALL OPENROUTER ----------------
+    // ---------------- API CALL ----------------
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
         model: "openrouter/auto",
         messages: [
-          {
-            role: "user",
-            content: contextText
-          }
+          { role: "user", content: contextText }
         ]
       },
       {
@@ -124,24 +149,27 @@ app.post("/chat", async (req, res) => {
 
     const reply = response.data.choices[0].message.content;
 
-    // Save AI response
     chatHistory.push({ text: reply, role: "assistant" });
 
+    // ---------------- FINAL RESPONSE ----------------
     res.json({
       reply,
-      selected: selectedMessages
+      selected: finalSelected,
+      dpTable: result.table.length > 0 ? result.table : null
     });
 
   } catch (err) {
     console.error(err.response?.data || err.message);
-    res.json({ reply: "Error occurred", selected: [] });
+
+    res.json({
+      reply: "Error occurred",
+      selected: [],
+      dpTable: null
+    });
   }
 });
 
-// ---------------- START SERVER ----------------
+// ---------------- START ----------------
 app.listen(3000, () =>
   console.log("Server running on http://localhost:3000")
 );
-
-
-

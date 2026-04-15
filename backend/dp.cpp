@@ -1,23 +1,30 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-struct Message {
-    int tokens;
-    int importance;
-    string text;
-};
+int main() {
+    int n, maxTokens;
+    cin >> n >> maxTokens;
 
-vector<int> selectMessages(vector<Message>& msgs, int maxTokens) {
-    int n = msgs.size();
+    vector<int> tokens(n), importance(n);
 
+    string line;
+    getline(cin, line); // clear newline
+
+    // Input
+    for (int i = 0; i < n; i++) {
+        cin >> tokens[i] >> importance[i];
+        getline(cin, line); // ignore text part
+    }
+
+    // DP table
     vector<vector<int>> dp(n + 1, vector<int>(maxTokens + 1, 0));
 
     for (int i = 1; i <= n; i++) {
         for (int w = 0; w <= maxTokens; w++) {
-            if (msgs[i - 1].tokens <= w) {
+            if (tokens[i - 1] <= w) {
                 dp[i][w] = max(
                     dp[i - 1][w],
-                    dp[i - 1][w - msgs[i - 1].tokens] + msgs[i - 1].importance
+                    dp[i - 1][w - tokens[i - 1]] + importance[i - 1]
                 );
             } else {
                 dp[i][w] = dp[i - 1][w];
@@ -25,36 +32,32 @@ vector<int> selectMessages(vector<Message>& msgs, int maxTokens) {
         }
     }
 
+    // ---------------- PRINT DP TABLE ----------------
+    cout << "TABLE\n";
+    for (int i = 0; i <= n; i++) {
+        for (int w = 0; w <= maxTokens; w++) {
+            cout << dp[i][w] << " ";
+        }
+        cout << "\n";
+    }
+
+    // ---------------- BACKTRACK ----------------
     int w = maxTokens;
     vector<int> selected;
 
     for (int i = n; i > 0; i--) {
         if (dp[i][w] != dp[i - 1][w]) {
             selected.push_back(i - 1);
-            w -= msgs[i - 1].tokens;
+            w -= tokens[i - 1];
         }
     }
 
     reverse(selected.begin(), selected.end());
-    return selected;
-}
 
-int main() {
-    int n, maxTokens;
-    cin >> n >> maxTokens;
-
-    vector<Message> msgs(n);
-
-    for (int i = 0; i < n; i++) {
-        cin >> msgs[i].tokens >> msgs[i].importance;
-        cin.ignore();
-        getline(cin, msgs[i].text);
-    }
-
-    vector<int> result = selectMessages(msgs, maxTokens);
-
-    for (int idx : result) {
-        cout << idx << " ";
+    // ---------------- PRINT SELECTED ----------------
+    cout << "SELECTED\n";
+    for (int i : selected) {
+        cout << i << " ";
     }
 
     return 0;
