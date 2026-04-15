@@ -2,14 +2,14 @@
 
 An intelligent chatbot system that optimizes response quality by selecting the most relevant context using **Dynamic Programming (0/1 Knapsack Algorithm)**.
 
-## 🚀 Project Overview
+## 🚀 Project Overview: 
 Modern AI chatbots rely on previous conversation history (context) to generate meaningful responses. However, sending the entire chat history is inefficient due to:
 -  Token limits  
 -  Increased cost  
 -  Reduced relevance  
 This project solves the problem by applying **Dynamic Programming** to select only the most important messages before sending them to the AI.
 
-## 🧠 Core Idea
+## 🧠 Core Idea: 
 We model the problem as a **0/1 Knapsack Problem**:
 
 | Concept | Mapping |
@@ -21,7 +21,7 @@ We model the problem as a **0/1 Knapsack Problem**:
 
 Goal: Maximize importance within token limit.
 
-## ⚙️ How It Works
+## ⚙️ How It Works: 
 1. User enters a query  
 2. Chat history is stored  
 3. Each message gets:
@@ -32,13 +32,13 @@ Goal: Maximize importance within token limit.
 6. Response is displayed  
 7. DP table is visualized  
 
-## 🧩 Tech Stack
+## 🧩 Tech Stack: 
 - **Frontend:** HTML, CSS, JavaScript  
 - **Backend:** Node.js (Express)  
 - **Algorithm:** C++ (Dynamic Programming)  
 - **AI API:** OpenRouter  
 
-## 📁 Project Structure
+## 📁 Project Structure: 
 project/
 │
 ├── backend/
@@ -54,7 +54,7 @@ project/
 │
 └── README.md
 
-✨ Features
+## ✨ Features: 
 💬 ChatGPT-like UI
 🧠 Dynamic Programming-based optimization
 📊 DP table visualization
@@ -62,18 +62,18 @@ project/
 🎯 Improved response accuracy
 ⌨️ Enter-to-send + typing animation
 
-🎯 Applications
+## 🎯 Applications:
 AI Chatbots
 Recommendation Systems
 Context-aware Assistants
 NLP Optimization
 
-🧠 Key Learning
+## 🧠 Key Learning:
 Application of Dynamic Programming in real-world systems
 Integration of C++ with Node.js
 Efficient context management in AI systems
 
-🚀 Future Improvements
+## 🚀 Future Improvements:
  Highlight selected DP path in table
  Token usage visualization
  Voice input support
@@ -82,5 +82,5 @@ Efficient context management in AI systems
 
 This project uses Dynamic Programming (0/1 Knapsack) to optimally select relevant chat context under token constraints, improving chatbot efficiency and response quality.
 
-📌 License
+## 📌 License:
 This project is for educational purposes.
