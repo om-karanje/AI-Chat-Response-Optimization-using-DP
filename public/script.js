@@ -1,26 +1,31 @@
 const inputBox = document.getElementById("input");
+
 inputBox.addEventListener("keydown", function (e) {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
-  }});
+  }
+});
 
 async function sendMessage() {
   const chat = document.getElementById("chat");
   const selectedDiv = document.getElementById("selected");
   const dpExplain = document.getElementById("dpExplain");
   const dpTableDiv = document.getElementById("dpTable");
+  const lcsDiv = document.getElementById("lcsMatrix");
+
   const message = inputBox.value.trim();
   if (!message) return;
+
   inputBox.value = "";
 
-  // user msg
+  // USER MESSAGE
   const userMsg = document.createElement("div");
   userMsg.className = "message user";
   userMsg.innerText = message;
   chat.appendChild(userMsg);
 
-  // ai msg (typing placeholder)
+  // AI LOADING
   const aiMsg = document.createElement("div");
   aiMsg.className = "message ai loading";
   aiMsg.innerText = "Typing...";
@@ -39,7 +44,7 @@ async function sendMessage() {
 
     const data = await res.json();
 
-    //typing effect
+    // ---------------- TYPING ----------------
     const text = data.reply.trim();
     aiMsg.classList.remove("loading");
     aiMsg.innerHTML = "";
@@ -60,29 +65,31 @@ async function sendMessage() {
         aiMsg.innerText = text;
       }
     }
+
     typeEffect();
 
-    //selected context
+    // ---------------- SELECTED ----------------
     selectedDiv.innerHTML = "";
+
     data.selected.forEach(m => {
       const div = document.createElement("div");
       div.className = "selected-msg";
-      div.innerText = m.text;
+      div.innerText = `${m.text} (LCS: ${m.similarity})`;
       selectedDiv.appendChild(div);
     });
 
-    // dp explaination
+    // ---------------- DP EXPLANATION ----------------
     dpExplain.innerHTML = `
       ✔ Selected ${data.selected.length} messages <br>
-      ✔ Based on token constraint <br>
-      ✔ Optimized using Knapsack DP
+      ✔ LCS used for similarity <br>
+      ✔ Knapsack used for optimization
     `;
 
-    // dp table
+    // ---------------- DP TABLE ----------------
     dpTableDiv.innerHTML = "";
+
     if (data.dpTable) {
       const table = document.createElement("table");
-      table.style.borderCollapse = "collapse";
 
       data.dpTable.forEach(row => {
         const tr = document.createElement("tr");
@@ -95,12 +102,37 @@ async function sendMessage() {
           td.style.fontSize = "10px";
           tr.appendChild(td);
         });
+
         table.appendChild(tr);
       });
 
       dpTableDiv.appendChild(table);
     } else {
-      dpTableDiv.innerText = "DP table not generated (fallback used)";
+      dpTableDiv.innerText = "DP table not generated";
+    }
+
+    // ---------------- LCS MATRIX ----------------
+    lcsDiv.innerHTML = "";
+
+    if (data.lcsMatrix) {
+      const table = document.createElement("table");
+
+      data.lcsMatrix.forEach(row => {
+        const tr = document.createElement("tr");
+
+        row.forEach(cell => {
+          const td = document.createElement("td");
+          td.innerText = cell;
+          td.style.border = "1px solid #666";
+          td.style.padding = "3px";
+          td.style.fontSize = "10px";
+          tr.appendChild(td);
+        });
+
+        table.appendChild(tr);
+      });
+
+      lcsDiv.appendChild(table);
     }
 
   } catch (err) {

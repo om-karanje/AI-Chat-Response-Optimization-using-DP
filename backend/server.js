@@ -11,33 +11,58 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("../public"));
 
-console.log("OPENROUTER KEY:", process.env.OPENROUTER_API_KEY);
-
 let chatHistory = [];
 
-//token
+// ---------------- TOKEN ----------------
 function estimateTokens(text) {
   return Math.ceil(text.length / 4);
 }
 
-//importance logic
+// ---------------- LCS MATRIX ----------------
+function lcsMatrix(a, b) {
+  const n = a.length;
+  const m = b.length;
+
+  const dp = Array(n + 1).fill(0).map(() => Array(m + 1).fill(0));
+
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  return dp;
+}
+
+// ---------------- LCS LENGTH ----------------
+function lcs(a, b) {
+  const dp = lcsMatrix(a, b);
+  return dp[a.length][b.length];
+}
+
+// ---------------- IMPORTANCE ----------------
 function calculateImportance(msg, query, index) {
   let score = 1;
-  if (msg.text.toLowerCase().includes(query.toLowerCase())) {
-    score += 5;
-  }
-  score += index * 1.5; // recency boost
+
+  const similarity = lcs(msg.text.toLowerCase(), query.toLowerCase());
+  score += similarity;
+
+  score += index * 1.5;
+
   return score;
 }
 
-//relevance
+// ---------------- RELEVANCE ----------------
 function isRelevant(msg, query) {
-  const qWords = query.toLowerCase().split(" ");
-  const text = msg.text.toLowerCase();
-  return qWords.some(word => text.includes(word));
+  const similarity = lcs(msg.text.toLowerCase(), query.toLowerCase());
+  return similarity > 3;
 }
 
-// function to run dp.cpp
+// ---------------- RUN C++ ----------------
 function runCPP(messages, maxTokens) {
   return new Promise((resolve, reject) => {
     let input = `${messages.length} ${maxTokens}\n`;
@@ -46,16 +71,11 @@ function runCPP(messages, maxTokens) {
       input += `${m.tokens} ${Math.floor(m.importance)} ${m.text}\n`;
     });
 
-    //path fixing
     const process = exec(".\\dp.exe", (error, stdout) => {
-      if (error) {
-        console.error("DP EXEC ERROR:", error);
-        return reject(error);
-      }
-
-      console.log("RAW OUTPUT:\n", stdout);
+      if (error) return reject(error);
 
       const lines = stdout.trim().split("\n");
+
       let table = [];
       let selected = [];
       let mode = "";
@@ -80,14 +100,16 @@ function runCPP(messages, maxTokens) {
   });
 }
 
-// route of chat
+// ---------------- CHAT ----------------
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
+
   chatHistory.push({ text: message, role: "user" });
+
   const maxTokens = 300;
 
-  // ensuring that the context is enough
   const recentHistory = chatHistory.slice(-5);
+
   const filteredHistory = chatHistory.filter(msg =>
     isRelevant(msg, message)
   );
@@ -104,16 +126,24 @@ app.post("/chat", async (req, res) => {
 
   try {
     const result = await runCPP(enriched, maxTokens);
-    console.log("DP RESULT:", result);
-    const selectedMessages = result.selected.map(i => enriched[i]);
 
-    // fallback safety
+    const selectedMessages = result.selected.map(i => ({
+      ...enriched[i],
+      similarity: lcs(enriched[i].text.toLowerCase(), message.toLowerCase())
+    }));
+
     const finalSelected =
       selectedMessages.length > 0
         ? selectedMessages
         : baseHistory.slice(-2);
 
-    //prompt
+    // ---------------- LCS MATRIX FOR FIRST SELECTED ----------------
+    const lcsMat = lcsMatrix(
+      message.toLowerCase(),
+      finalSelected[0]?.text.toLowerCase() || ""
+    );
+
+    // ---------------- PROMPT ----------------
     const contextText =
       "You are a helpful assistant.\n\n" +
       "Answer the CURRENT question using previous context if needed.\n\n" +
@@ -122,14 +152,11 @@ app.post("/chat", async (req, res) => {
       "\n\nCurrent question:\n" +
       message;
 
-    // calling api key
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
         model: "openrouter/auto",
-        messages: [
-          { role: "user", content: contextText }
-        ]
+        messages: [{ role: "user", content: contextText }]
       },
       {
         headers: {
@@ -143,25 +170,19 @@ app.post("/chat", async (req, res) => {
 
     chatHistory.push({ text: reply, role: "assistant" });
 
-    //final response
     res.json({
       reply,
       selected: finalSelected,
-      dpTable: result.table.length > 0 ? result.table : null
+      dpTable: result.table.length > 0 ? result.table : null,
+      lcsMatrix: lcsMat
     });
 
   } catch (err) {
-    console.error(err.response?.data || err.message);
-
-    res.json({
-      reply: "Error occurred",
-      selected: [],
-      dpTable: null
-    });
+    console.error(err.message);
+    res.json({ reply: "Error occurred", selected: [], dpTable: null, lcsMatrix: null });
   }
 });
 
-//start
 app.listen(3000, () =>
   console.log("Server running on http://localhost:3000")
 );
