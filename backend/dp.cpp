@@ -10,14 +10,13 @@ int main() {
     string line;
     getline(cin, line); // clear newline
 
-    // Input
+    //input
     for (int i = 0; i < n; i++) {
         cin >> tokens[i] >> importance[i];
         getline(cin, line); // ignore text part
     }
 
-    // DP table
-    vector<vector<int>> dp(n + 1, vector<int>(maxTokens + 1, 0));
+    vector<vector<int>> dp(n + 1, vector<int>(maxTokens + 1, 0)); //for dp table
 
     for (int i = 1; i <= n; i++) {
         for (int w = 0; w <= maxTokens; w++) {
@@ -32,7 +31,7 @@ int main() {
         }
     }
 
-    // ---------------- PRINT DP TABLE ----------------
+    // printing dp table
     cout << "TABLE\n";
     for (int i = 0; i <= n; i++) {
         for (int w = 0; w <= maxTokens; w++) {
@@ -41,7 +40,7 @@ int main() {
         cout << "\n";
     }
 
-    // ---------------- BACKTRACK ----------------
+    // backtracking
     int w = maxTokens;
     vector<int> selected;
 
@@ -54,7 +53,7 @@ int main() {
 
     reverse(selected.begin(), selected.end());
 
-    // ---------------- PRINT SELECTED ----------------
+    //printing selected context
     cout << "SELECTED\n";
     for (int i : selected) {
         cout << i << " ";

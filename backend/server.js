@@ -15,31 +15,29 @@ console.log("OPENROUTER KEY:", process.env.OPENROUTER_API_KEY);
 
 let chatHistory = [];
 
-// ---------------- TOKEN ----------------
+//token
 function estimateTokens(text) {
   return Math.ceil(text.length / 4);
 }
 
-// ---------------- IMPORTANCE ----------------
+//importance logic
 function calculateImportance(msg, query, index) {
   let score = 1;
-
   if (msg.text.toLowerCase().includes(query.toLowerCase())) {
     score += 5;
   }
-
   score += index * 1.5; // recency boost
   return score;
 }
 
-// ---------------- RELEVANCE ----------------
+//relevance
 function isRelevant(msg, query) {
   const qWords = query.toLowerCase().split(" ");
   const text = msg.text.toLowerCase();
   return qWords.some(word => text.includes(word));
 }
 
-// ---------------- RUN C++ DP ----------------
+// function to run dp.cpp
 function runCPP(messages, maxTokens) {
   return new Promise((resolve, reject) => {
     let input = `${messages.length} ${maxTokens}\n`;
@@ -48,7 +46,7 @@ function runCPP(messages, maxTokens) {
       input += `${m.tokens} ${Math.floor(m.importance)} ${m.text}\n`;
     });
 
-    // 🔥 FIXED PATH FOR WINDOWS
+    //path fixing
     const process = exec(".\\dp.exe", (error, stdout) => {
       if (error) {
         console.error("DP EXEC ERROR:", error);
@@ -58,7 +56,6 @@ function runCPP(messages, maxTokens) {
       console.log("RAW OUTPUT:\n", stdout);
 
       const lines = stdout.trim().split("\n");
-
       let table = [];
       let selected = [];
       let mode = "";
@@ -83,17 +80,14 @@ function runCPP(messages, maxTokens) {
   });
 }
 
-// ---------------- CHAT ROUTE ----------------
+// route of chat
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
-
   chatHistory.push({ text: message, role: "user" });
-
   const maxTokens = 300;
 
-  // 🔥 Ensure enough context
+  // ensuring that the context is enough
   const recentHistory = chatHistory.slice(-5);
-
   const filteredHistory = chatHistory.filter(msg =>
     isRelevant(msg, message)
   );
@@ -110,18 +104,16 @@ app.post("/chat", async (req, res) => {
 
   try {
     const result = await runCPP(enriched, maxTokens);
-
     console.log("DP RESULT:", result);
-
     const selectedMessages = result.selected.map(i => enriched[i]);
 
-    // 🔥 fallback safety
+    // fallback safety
     const finalSelected =
       selectedMessages.length > 0
         ? selectedMessages
         : baseHistory.slice(-2);
 
-    // ---------------- PROMPT ----------------
+    //prompt
     const contextText =
       "You are a helpful assistant.\n\n" +
       "Answer the CURRENT question using previous context if needed.\n\n" +
@@ -130,7 +122,7 @@ app.post("/chat", async (req, res) => {
       "\n\nCurrent question:\n" +
       message;
 
-    // ---------------- API CALL ----------------
+    // calling api key
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -151,7 +143,7 @@ app.post("/chat", async (req, res) => {
 
     chatHistory.push({ text: reply, role: "assistant" });
 
-    // ---------------- FINAL RESPONSE ----------------
+    //final response
     res.json({
       reply,
       selected: finalSelected,
@@ -169,7 +161,7 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-// ---------------- START ----------------
+//start
 app.listen(3000, () =>
   console.log("Server running on http://localhost:3000")
 );

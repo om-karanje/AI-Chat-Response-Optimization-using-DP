@@ -59,3 +59,34 @@ button {
   font-style: italic;
   color: #facc15;
 }
+
+#dpTable {
+  margin-top: 10px;
+  max-height: 200px;
+  overflow: auto;
+  background: #111;
+  padding: 5px;
+}
+
+.dp-cell {
+  display: inline-block;
+  border: 1px solid #444;
+  padding: 4px;
+  font-size: 10px;
+  min-width: 25px;
+  text-align: center;
+}  
+
+.cursor {
+  display: inline-block;
+  width: 8px;
+  background-color: white;
+  margin-left: 2px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}
