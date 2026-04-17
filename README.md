@@ -1,86 +1,104 @@
-# 💬 AI Chat Response Optimization using Dynamic Programming
+#  AI Chat Response Optimization using Dynamic Programming
 
-An intelligent chatbot system that optimizes response quality by selecting the most relevant context using **Dynamic Programming (0/1 Knapsack Algorithm)**.
+An intelligent chatbot system that improves response quality by selecting the most relevant context using **multiple Dynamic Programming techniques**:
+-  Longest Common Subsequence (LCS) → Similarity
+-  0/1 Knapsack → Optimal Context Selection
 
-## 🚀 Project Overview: 
-Modern AI chatbots rely on previous conversation history (context) to generate meaningful responses. However, sending the entire chat history is inefficient due to:
--  Token limits  
--  Increased cost  
--  Reduced relevance  
-This project solves the problem by applying **Dynamic Programming** to select only the most important messages before sending them to the AI.
+---
+##  Project Overview
+Modern AI chatbots rely on previous conversation history (context) to generate accurate responses. However, sending the entire chat history leads to:
+-  Token limit issues  
+-  Increased computation cost  
+-  Irrelevant responses
+  T is project solves the problem using **Dynamic Programming-based optimization**.
 
-## 🧠 Core Idea: 
-We model the problem as a **0/1 Knapsack Problem**:
+---
+##  Core Idea
+We combine **two DP algorithms**:
+###  1. LCS (Longest Common Subsequence)
+- Measures similarity between:
+  - User query  
+  - Previous messages  
+- Helps identify relevant context  
 
-| Concept | Mapping |
-|--------|--------|
-| Message | Item |
-| Token count | Weight |
-| Importance score | Value |
-| Max tokens | Capacity |
+---
+###  2. 0/1 Knapsack
+- Selects optimal subset of messages  
+- Maximizes importance under token constraint  
 
-Goal: Maximize importance within token limit.
-
-## ⚙️ How It Works: 
+---
+##  How It Works
 1. User enters a query  
 2. Chat history is stored  
-3. Each message gets:
-   - Token size  
-   - Importance score  
-4. C++ DP algorithm selects optimal messages  
-5. Selected context is sent to AI  
-6. Response is displayed  
-7. DP table is visualized  
+3. For each message:
+   - Token size is calculated  
+   - Similarity is computed using **LCS**  
+   - Importance score is assigned  
+4. Messages are treated as items in **Knapsack**:
+   - Weight → Token count  
+   - Value → Importance  
+5. C++ DP selects optimal messages  
+6. Selected context is sent to AI  
+7. AI generates response  
+8. System visualizes:
+   - Selected messages  
+   - Knapsack DP table  
+   - LCS matrix  
 
-## 🧩 Tech Stack: 
+---
+##  Tech Stack
 - **Frontend:** HTML, CSS, JavaScript  
 - **Backend:** Node.js (Express)  
-- **Algorithm:** C++ (Dynamic Programming)  
+- **Algorithms:** C++ (Knapsack), JS (LCS)  
 - **AI API:** OpenRouter  
 
-## 📁 Project Structure: 
+---
+##  Project Structure
 project/
 │
 ├── backend/
-│ ├── server.js
-│ ├── dp.cpp
-│ ├── dp.exe
-│ └── .env
+│ ├── server.js # Backend logic + LCS
+│ ├── dp.cpp # Knapsack DP
+│ ├── dp.exe # Compiled executable
+│ └── .env # API key
 │
 ├── public/
-│ ├── index.html
-│ ├── style.css
-│ └── script.js
+│ ├── index.html # UI
+│ ├── style.css # Styling
+│ └── script.js # Frontend logic
 │
 └── README.md
 
-## ✨ Features: 
-1. ChatGPT-like UI
-2. Dynamic Programming-based optimization
-3. DP table visualization
-4. Smart context selection
-5. Improved response accuracy
-6. Enter-to-send + typing animation
+---
+##  Features
+-  ChatGPT-like UI
+-  LCS-based similarity scoring
+-  Knapsack-based optimization
+-  DP table visualization
+-  LCS matrix visualization
 
-## 🎯 Applications:
-1. AI Chatbots
-2. Recommendation Systems
-3. Context-aware Assistants
-4. NLP Optimization
+##  DAA Concepts Used
+- Dynamic Programming
+- 0/1 Knapsack Problem
+- Longest Common Subsequence (LCS)
+- Time & Space Complexity Analysis
 
-## 🧠 Key Learning:
-1. Application of Dynamic Programming in real-world systems
-2. Integration of C++ with Node.js
-3. Efficient context management in AI systems
+## Complexity
+- Knapsack:
+Time: O(n × W)
+Space: O(n × W)
+- LCS:
+Time: O(n × m)
+Space: O(n × m)
 
-## 🚀 Future Improvements:
-1. Highlight selected DP path in table
-2. Token usage visualization
-3. Voice input support
-4. Chat history persistence
-5. Viva Summary
+##  Applications
+- AI Chatbots
+- Recommendation Systems
+- Context-aware Assistants
+- NLP Optimization
 
-This project uses Dynamic Programming (0/1 Knapsack) to optimally select relevant chat context under token constraints, improving chatbot efficiency and response quality.
-
-## 📌 License:
-This project is for educational purposes.
+##  Future Improvements
+- Highlight DP path
+- Token usage visualization
+- Voice input
+- Chat history storage
