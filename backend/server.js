@@ -13,12 +13,12 @@ app.use(express.static("../public"));
 
 let chatHistory = [];
 
-// ---------------- TOKEN ----------------
+// token func
 function estimateTokens(text) {
   return Math.ceil(text.length / 4);
 }
 
-// ---------------- LCS MATRIX ----------------
+// lcs matrix
 function lcsMatrix(a, b) {
   const n = a.length;
   const m = b.length;
@@ -38,13 +38,13 @@ function lcsMatrix(a, b) {
   return dp;
 }
 
-// ---------------- LCS LENGTH ----------------
+// length of lcs
 function lcs(a, b) {
   const dp = lcsMatrix(a, b);
   return dp[a.length][b.length];
 }
 
-// ---------------- IMPORTANCE ----------------
+// importance calculation func
 function calculateImportance(msg, query, index) {
   let score = 1;
 
@@ -56,13 +56,13 @@ function calculateImportance(msg, query, index) {
   return score;
 }
 
-// ---------------- RELEVANCE ----------------
+// relevance
 function isRelevant(msg, query) {
   const similarity = lcs(msg.text.toLowerCase(), query.toLowerCase());
   return similarity > 3;
 }
 
-// ---------------- RUN C++ ----------------
+// func to run cpp file
 function runCPP(messages, maxTokens) {
   return new Promise((resolve, reject) => {
     let input = `${messages.length} ${maxTokens}\n`;
@@ -100,7 +100,7 @@ function runCPP(messages, maxTokens) {
   });
 }
 
-// ---------------- CHAT ----------------
+// ai chat
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
 
@@ -137,13 +137,13 @@ app.post("/chat", async (req, res) => {
         ? selectedMessages
         : baseHistory.slice(-2);
 
-    // ---------------- LCS MATRIX FOR FIRST SELECTED ----------------
+    // lcs matrix for first selected context
     const lcsMat = lcsMatrix(
       message.toLowerCase(),
       finalSelected[0]?.text.toLowerCase() || ""
     );
 
-    // ---------------- PROMPT ----------------
+    // prompt to ai
     const contextText =
       "You are a helpful assistant.\n\n" +
       "Answer the CURRENT question using previous context if needed.\n\n" +

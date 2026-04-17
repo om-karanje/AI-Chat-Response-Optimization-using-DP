@@ -19,13 +19,13 @@ async function sendMessage() {
 
   inputBox.value = "";
 
-  // USER MESSAGE
+  // user msg
   const userMsg = document.createElement("div");
   userMsg.className = "message user";
   userMsg.innerText = message;
   chat.appendChild(userMsg);
 
-  // AI LOADING
+  // ai loading visual block
   const aiMsg = document.createElement("div");
   aiMsg.className = "message ai loading";
   aiMsg.innerText = "Typing...";
@@ -44,7 +44,7 @@ async function sendMessage() {
 
     const data = await res.json();
 
-    // ---------------- TYPING ----------------
+    // typing animation
     const text = data.reply.trim();
     aiMsg.classList.remove("loading");
     aiMsg.innerHTML = "";
@@ -68,7 +68,7 @@ async function sendMessage() {
 
     typeEffect();
 
-    // ---------------- SELECTED ----------------
+    // selected context
     selectedDiv.innerHTML = "";
 
     data.selected.forEach(m => {
@@ -78,14 +78,14 @@ async function sendMessage() {
       selectedDiv.appendChild(div);
     });
 
-    // ---------------- DP EXPLANATION ----------------
+    // dp explaination
     dpExplain.innerHTML = `
       ✔ Selected ${data.selected.length} messages <br>
       ✔ LCS used for similarity <br>
       ✔ Knapsack used for optimization
     `;
 
-    // ---------------- DP TABLE ----------------
+    // dp matrix
     dpTableDiv.innerHTML = "";
 
     if (data.dpTable) {
@@ -111,7 +111,7 @@ async function sendMessage() {
       dpTableDiv.innerText = "DP table not generated";
     }
 
-    // ---------------- LCS MATRIX ----------------
+    // lcs matrix
     lcsDiv.innerHTML = "";
 
     if (data.lcsMatrix) {
